@@ -2,16 +2,16 @@ package httplogger
 
 type Fields map[string]interface{}
 
-type Logger interface {
+type GenericLogger interface {
 	IsDebugEnabled() bool
 	IsTraceEnabled() bool
 
-	WithFields(fields Fields) *Logger
+	WithFields(fields Fields) GenericLogger
 
 	Debugf(format string, args ...interface{})
 	Tracef(format string, args ...interface{})
 }
 
-func NewHTTPLogger(logger Logger) string {
+func NewHTTPLogger(logger GenericLogger) string {
 	return "test"
 }
