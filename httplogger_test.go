@@ -38,9 +38,11 @@ func (this *LogrusAdapter) Tracef(format string, args ...interface{}) {
 }
 
 func TestClient(t *testing.T) {
-	NewHTTPLogger(NewLogrusAdapter())
+	logrus.SetLevel(logrus.DebugLevel)
 
-	client := &http.Client{}
+	client := &http.Client{
+		Transport: NewHTTPLogger(http.DefaultTransport, NewLogrusAdapter()),
+	}
 	resp, err := client.Get("https://ya.ru")
 	if err != nil {
 		t.Errorf("TestClient: %s", err.Error())

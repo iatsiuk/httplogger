@@ -1,5 +1,10 @@
 package httplogger
 
+import (
+	"net/http"
+	"net/http/httputil"
+)
+
 type Fields map[string]interface{}
 
 type GenericLogger interface {
@@ -12,6 +17,31 @@ type GenericLogger interface {
 	Tracef(format string, args ...interface{})
 }
 
-func NewHTTPLogger(logger GenericLogger) string {
-	return "test"
+type HTTPLogger struct {
+	transport http.RoundTripper
+	logger    GenericLogger
+}
+
+func NewHTTPLogger(transport http.RoundTripper, logger GenericLogger) *HTTPLogger {
+	return &HTTPLogger{transport, logger}
+}
+
+func (this *HTTPLogger) RoundTrip(req *http.Request) (*http.Response, error) {
+	resp, err := this.transport.RoundTrip(req)
+
+	if this.logger.IsDebugEnabled() {
+		isDumpBody := this.logger.IsTraceEnabled()
+		reqDump, _ := httputil.DumpRequestOut(resp.Request, isDumpBody)
+		respDump, _ := httputil.DumpResponse(resp, isDumpBody)
+
+		this.logger.WithFields(Fields{
+			"obj": Fields{"request": string(reqDump), "response": string(respDump)},
+		}).Debugf("send request %s %s", resp.Request.Method, resp.Request.URL.String())
+	}
+
+	if err != nil {
+		return resp, err
+	}
+
+	return resp, err
 }
