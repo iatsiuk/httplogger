@@ -1,49 +1,44 @@
 package httplogger
 
 import (
+	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/sirupsen/logrus"
 )
 
-type LogrusAdapter struct {
-	entry *logrus.Entry
-}
-
-func NewLogrusAdapter() *LogrusAdapter {
-	fields := make(logrus.Fields)
-
-	return &LogrusAdapter{entry: logrus.WithFields(fields)}
-}
-
-func (this *LogrusAdapter) IsDebugEnabled() bool {
-	return this.entry.Logger.IsLevelEnabled(logrus.DebugLevel)
-}
-
-func (this *LogrusAdapter) IsTraceEnabled() bool {
-	return this.entry.Logger.IsLevelEnabled(logrus.TraceLevel)
-}
-
-func (this *LogrusAdapter) WithFields(fields Fields) GenericLogger {
-	return &LogrusAdapter{entry: logrus.WithFields(logrus.Fields(fields))}
-}
-
-func (this *LogrusAdapter) Debugf(format string, args ...interface{}) {
-	this.entry.Debugf(format, args...)
-}
-
-func (this *LogrusAdapter) Tracef(format string, args ...interface{}) {
-	this.entry.Tracef(format, args...)
-}
-
-func TestClient(t *testing.T) {
+func TestNewHTTPLoggerDebugLevel(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "ok")
+	}))
+	defer ts.Close()
 
 	client := &http.Client{
 		Transport: NewHTTPLogger(http.DefaultTransport, NewLogrusAdapter()),
 	}
-	resp, err := client.Get("https://ya.ru")
+	resp, err := client.Get(ts.URL)
+	if err != nil {
+		t.Errorf("TestClient: %s", err.Error())
+	}
+	defer resp.Body.Close()
+}
+
+func TestNewHTTPLoggerTraceLevel(t *testing.T) {
+	logrus.SetLevel(logrus.TraceLevel)
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "ok")
+	}))
+	defer ts.Close()
+
+	client := &http.Client{
+		Transport: NewHTTPLogger(http.DefaultTransport, NewLogrusAdapter()),
+	}
+	resp, err := client.Get(ts.URL)
 	if err != nil {
 		t.Errorf("TestClient: %s", err.Error())
 	}

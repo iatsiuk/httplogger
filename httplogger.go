@@ -17,16 +17,16 @@ type GenericLogger interface {
 	Tracef(format string, args ...interface{})
 }
 
-type HTTPLogger struct {
+type httpLogger struct {
 	transport http.RoundTripper
 	logger    GenericLogger
 }
 
-func NewHTTPLogger(transport http.RoundTripper, logger GenericLogger) *HTTPLogger {
-	return &HTTPLogger{transport, logger}
+func NewHTTPLogger(transport http.RoundTripper, logger GenericLogger) *httpLogger {
+	return &httpLogger{transport, logger}
 }
 
-func (this *HTTPLogger) RoundTrip(req *http.Request) (*http.Response, error) {
+func (this *httpLogger) RoundTrip(req *http.Request) (*http.Response, error) {
 	resp, err := this.transport.RoundTrip(req)
 
 	if this.logger.IsDebugEnabled() {
