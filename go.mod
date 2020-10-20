@@ -1,4 +1,4 @@
-module example.com/httplogger
+module github.com/iatsiuk/httplogger
 
 go 1.14
 
