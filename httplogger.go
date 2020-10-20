@@ -20,22 +20,30 @@ type GenericLogger interface {
 type httpLogger struct {
 	transport http.RoundTripper
 	logger    GenericLogger
+
+	isDebugEnabled bool
+	isTraceEnabled bool
 }
 
 func NewHTTPLogger(transport http.RoundTripper, logger GenericLogger) *httpLogger {
-	return &httpLogger{transport, logger}
+	return &httpLogger{transport, logger, logger.IsDebugEnabled(), logger.IsTraceEnabled()}
 }
 
 func (this *httpLogger) RoundTrip(req *http.Request) (*http.Response, error) {
+	var reqDump []byte
+
+	if this.isDebugEnabled {
+		reqDump, _ = httputil.DumpRequestOut(req, this.isTraceEnabled)
+	}
+
 	resp, err := this.transport.RoundTrip(req)
 
-	if this.logger.IsDebugEnabled() {
-		isDumpBody := this.logger.IsTraceEnabled()
-		reqDump, _ := httputil.DumpRequestOut(resp.Request, isDumpBody)
-		respDump, _ := httputil.DumpResponse(resp, isDumpBody)
+	if this.isDebugEnabled {
+		respDump, _ := httputil.DumpResponse(resp, this.isTraceEnabled)
 
 		this.logger.WithFields(Fields{
-			"obj": Fields{"request": string(reqDump), "response": string(respDump)},
+			"obj":  Fields{"request": string(reqDump), "response": string(respDump)},
+			"tags": []string{"httplogger"},
 		}).Debugf("send request %s %s", resp.Request.Method, resp.Request.URL.String())
 	}
 
